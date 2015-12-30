@@ -1,5 +1,5 @@
 {
-   "watchDir":"/apps/logs/test_project/stdout.log",
+   "watchDir":"/apps/logs/goose/stdout.log",
    "regexp":"test",
 
    "mask":"",

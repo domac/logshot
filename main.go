@@ -80,6 +80,9 @@ func main() {
 
 	if fi.Mode()&os.ModeNamedPipe == 0 {
 		logsend.WatchFiles(*config)
+	} else {
+		flag.VisitAll(logsend.LoadRawConfig)
+		logsend.ProcessStdin()
 	}
 
 }
