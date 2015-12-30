@@ -20,7 +20,7 @@ var (
 	version = flag.Bool("version", false, "show version number")
 
 	//应用自身日志输出文件
-	logFile = flag.String("log", "/apps/logs/loghub_agent.log", "log file")
+	logFile = flag.String("log", "/apps/logs/logshot.log", "log file")
 
 	//定义发送sender
 	sender = flag.String("sender", "default", "sender which send data to target node")
