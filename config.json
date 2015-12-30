@@ -1,0 +1,17 @@
+{
+   "watchDir":"/apps/logs/test_project/stdout.log",
+   "regexp":"test",
+
+   "mask":"",
+   "senders": {
+   	  "default": {
+   	  	 "host":"1"
+   	  },
+   	  "mysql": {
+   	  	"host":"",
+   	  	"port":"",
+   	  	"username":"",
+   	  	"password":""
+   	  }
+   }
+}
