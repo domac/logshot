@@ -18,14 +18,15 @@ type DefaultSender struct {
 
 //1.初始化配置
 //2.监听消息发送通道
-func InitDefault(conf interface{}) {
+func InitDefault(conf map[string]string) {
 	go func() {
 		//阻塞的方式接收defaultSendCh的消息
 		for data := range defaultSendCh {
-			switch msg := data.(type) {
-			case *string:
-				fmt.Println("standard output ===>", *msg)
+			msg, err := Ci2string(data)
+			if err != nil {
+				continue
 			}
+			fmt.Println("standard output >> ", msg)
 		}
 	}()
 }
@@ -39,7 +40,7 @@ func NewDefaultSender() Sender {
 }
 
 //注入配置
-func (self *DefaultSender) SetConfig(interface{}) error {
+func (self *DefaultSender) SetConfig(map[string]string) error {
 	return nil
 }
 

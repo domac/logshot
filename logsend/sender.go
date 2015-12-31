@@ -3,12 +3,12 @@ package logsend
 //sender abstract
 type Sender interface {
 	Send(interface{})
-	SetConfig(interface{}) error
+	SetConfig(map[string]string) error
 	Name() string
 	Stop() error
 }
 
-func RegisterNewSender(name string, init func(interface{}), get func() Sender) {
+func RegisterNewSender(name string, init func(map[string]string), get func() Sender) {
 	sender := &SenderRegister{
 		init: init,
 		get:  get,
@@ -19,12 +19,12 @@ func RegisterNewSender(name string, init func(interface{}), get func() Sender) {
 }
 
 type SenderRegister struct {
-	init        func(interface{})
+	init        func(map[string]string)
 	get         func() Sender
 	initialized bool
 }
 
-func (self *SenderRegister) Init(val interface{}) {
+func (self *SenderRegister) Init(val map[string]string) {
 	self.init(val)
 	self.initialized = true
 }

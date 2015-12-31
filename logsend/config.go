@@ -1,11 +1,12 @@
 package logsend
 
 import (
-	"encoding/json"
+	"bufio"
 	"flag"
-	"io/ioutil"
+	"fmt"
 	logpkg "log"
 	"os"
+	"strings"
 )
 
 //配置结构
@@ -36,29 +37,10 @@ func LoadRawConfig(f *flag.Flag) {
 
 //载入自定义配置文件
 func LoadConfigFromFile(fileName string) (rule *Rule, err error) {
-	file, err := os.OpenFile(fileName, os.O_RDWR, 0644)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	rawConfig, err := ioutil.ReadAll(file)
-	if err != nil {
-		Conf.Logger.Fatalln(err)
-	}
-	return LoadConfig(rawConfig)
-}
-
-//载入具体配置项
-func LoadConfig(rawConfig []byte) (rule *Rule, err error) {
-	config := make(map[string]interface{})
-	if err := json.Unmarshal(rawConfig, &config); err != nil {
-		return nil, err
-	}
-	sender_map := config["senders"].(map[string]interface{})
+	config := ReadConfig(fileName)
 	senders := make([]Sender, 0)
 	for sender_name, register := range Conf.registeredSenders {
-		if val, ok := sender_map[sender_name]; ok {
-			//sender进行配置信息初始化
+		if val, ok := config[sender_name]; ok {
 			register.Init(val)
 			if register.initialized != true {
 				continue
@@ -67,15 +49,51 @@ func LoadConfig(rawConfig []byte) (rule *Rule, err error) {
 			senders = append(senders, sender)
 		}
 	}
-
-	watch_dir := config["watchDir"].(interface{}).(string)
-	regexp := config["regexp"].(interface{}).(string)
-
-	//建立规则, 如出现异常,则立刻panic,程序终止
+	watch_dir, _ := config["agent"]["watchDir"]
+	regexp, _ := config["agent"]["regexp"]
 	rule, err = NewRule(regexp, watch_dir)
 	if err != nil {
 		panic(err)
 	}
 	rule.senders = senders
 	return
+}
+
+//读取配置文件
+func ReadConfig(cfgFile string) map[string]map[string]string {
+	fin, err := os.OpenFile(cfgFile, os.O_RDWR, 0644)
+	if err != nil {
+		fmt.Println(err)
+		Conf.Logger.Fatal(err)
+	}
+	config := make(map[string]map[string]string)
+	config[""] = make(map[string]string)
+	var section = ""
+	scanner := bufio.NewScanner(fin)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text()) //去除空格
+		if line == "" || line[0] == ';' || line[0] == '#' {
+			//这行是注释，跳过
+			continue
+		}
+		lSqr := strings.Index(line, "[")
+		rSqr := strings.Index(line, "]")
+		if lSqr == 0 && rSqr == len(line)-1 {
+			section = line[lSqr+1 : rSqr]
+			_, ok := config[section]
+			if !ok {
+				config[section] = make(map[string]string)
+			}
+			continue
+		}
+
+		parts := strings.Split(line, "=")
+		if len(parts) == 2 {
+			key := strings.Trim(parts[0], " ")
+			val := strings.Trim(parts[1], " ")
+			config[section][key] = val
+		}
+	}
+	fin.Close()
+	return config
 }
