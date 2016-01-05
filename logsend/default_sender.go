@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	defaultSendCh = make(chan interface{}, 0)
+	defaultSendCh = make(chan *LogLine, 0)
 )
 
 func init() {
@@ -13,7 +13,7 @@ func init() {
 }
 
 type DefaultSender struct {
-	sendCh chan interface{}
+	sendCh chan *LogLine
 }
 
 //1.初始化配置
@@ -22,13 +22,15 @@ func InitDefault(conf map[string]string) {
 	go func() {
 		//阻塞的方式接收defaultSendCh的消息
 		for data := range defaultSendCh {
-			msg, err := Ci2string(data)
-			if err != nil {
-				continue
-			}
-			fmt.Println("standard output >> ", msg)
+			handleData(data)
 		}
 	}()
+	return
+}
+
+//处理日志数据
+func handleData(data *LogLine) {
+	fmt.Println("[", data.Ts, "]", "standard output : ", string(data.Line))
 }
 
 //工厂类,生成本Sender
@@ -49,11 +51,8 @@ func (self *DefaultSender) Name() string {
 	return "default"
 }
 
-//发送数据
-func (self *DefaultSender) Send(data interface{}) {
-	//不直接处理数据,先推到非缓冲的channel里面
-	//fmt.Println("default send is receiving data from watch dir !")
-	defaultSendCh <- data
+func (self *DefaultSender) Send(ll *LogLine) {
+	defaultSendCh <- ll
 }
 
 func (self *DefaultSender) Stop() error {

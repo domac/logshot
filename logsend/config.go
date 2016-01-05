@@ -2,6 +2,7 @@ package logsend
 
 import (
 	"bufio"
+	"errors"
 	"flag"
 	"fmt"
 	logpkg "log"
@@ -39,7 +40,12 @@ func LoadRawConfig(f *flag.Flag) {
 func LoadConfigFromFile(fileName string) (rule *Rule, err error) {
 	config := ReadConfig(fileName)
 	senders := make([]Sender, 0)
+	conifg_sender_name := Conf.SenderName
 	for sender_name, register := range Conf.registeredSenders {
+		//使用指定的sender
+		if sender_name != conifg_sender_name {
+			continue
+		}
 		if val, ok := config[sender_name]; ok {
 			register.Init(val)
 			if register.initialized != true {
@@ -54,6 +60,10 @@ func LoadConfigFromFile(fileName string) (rule *Rule, err error) {
 	rule, err = NewRule(regexp, watch_dir)
 	if err != nil {
 		panic(err)
+	}
+	//判断sender是否存在
+	if len(senders) == 0 {
+		panic(errors.New("No sender found !"))
 	}
 	rule.senders = senders
 	return
@@ -71,7 +81,7 @@ func ReadConfig(cfgFile string) map[string]map[string]string {
 	var section = ""
 	scanner := bufio.NewScanner(fin)
 	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text()) //去除空格
+		line := strings.Trim(scanner.Text(), " ")
 		if line == "" || line[0] == ';' || line[0] == '#' {
 			//这行是注释，跳过
 			continue

@@ -37,10 +37,8 @@ var (
 	//一直读取文件
 	readAlway = flag.Bool("alway", true, "read logs once and exit")
 
-	//指定内存prof
-	memprofile = flag.String("memprofile", "", "memory profile . eg : mem.prof")
-
-	cpuprofile = flag.String("cpuprofile", "", "profile file. eg : cpu.prof")
+	//是否生成性能文件
+	profile = flag.Bool("profile", false, "gen profile or not")
 )
 
 func main() {
@@ -88,12 +86,8 @@ func main() {
 		logsend.Conf.SenderName = *sender
 	}
 
-	if *memprofile != "" {
-		utils.GenMemoryProf(*memprofile)
-	}
-
-	if *cpuprofile != "" {
-		utils.GenCpuProfile(*cpuprofile)
+	if *profile {
+		utils.GenProfile()
 	}
 
 	logsend.Conf.ReadWholeLog = *readWholeLog
@@ -111,5 +105,5 @@ func main() {
 		flag.VisitAll(logsend.LoadRawConfig)
 		logsend.ProcessStdin()
 	}
-
+	os.Exit(0)
 }

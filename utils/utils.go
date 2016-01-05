@@ -2,28 +2,18 @@ package utils
 
 import (
 	"fmt"
-	"os"
-	"runtime/pprof"
+	"github.com/davecheney/profile"
 )
 
-func GenMemoryProf(memprofile string) {
-	if memprofile != "" {
-		f, err := os.Create(memprofile)
-		if err != nil {
-			fmt.Println(err)
-		}
-		pprof.WriteHeapProfile(f)
-		f.Close()
+//生成快照文件
+func GenProfile() {
+	cfg := profile.Config{
+		CPUProfile:     true,
+		MemProfile:     true,
+		NoShutdownHook: true, // do not hook SIGINT
+		ProfilePath:    ".",  //调用文件所在的目录
 	}
-}
-
-func GenCpuProfile(cpuprofile string) {
-	if cpuprofile != "" {
-		f, err := os.Create(cpuprofile)
-		if err != nil {
-			fmt.Println(err)
-		}
-		pprof.StartCPUProfile(f)
-		defer pprof.StopCPUProfile()
-	}
+	p := profile.Start(&cfg)
+	defer p.Stop()
+	fmt.Println("profile file generate success.")
 }

@@ -2,7 +2,11 @@ package logsend
 
 import (
 	"github.com/ActiveState/tail"
+	"github.com/Unknwon/com"
 	"github.com/howeyc/fsnotify"
+	"os"
+	"path/filepath"
+	"time"
 )
 
 //监听文件
@@ -43,15 +47,36 @@ func WatchFiles(configFile string) {
 	}
 }
 
+//为文件分配规则
 func assignFiles(allFiles []string, rule *Rule) ([]*File, error) {
 	files := make([]*File, 0)
 	for _, f := range allFiles {
-		file, err := NewFile(f)
-		if err != nil {
-			return files, err
+		is_dir := com.IsDir(f)
+		//watch-dir是目录的形式
+		if is_dir {
+			//遍历文件目录
+			filepath.Walk(f, func(pth string, info os.FileInfo, err error) error {
+				if err != nil {
+					panic(err)
+				}
+				if !info.IsDir() && info.Name()[0:1] != "." {
+					file, err := NewFile(pth)
+					if err != nil {
+						return err
+					}
+					file.rule = rule
+					files = append(files, file)
+				}
+				return nil
+			})
+		} else {
+			file, err := NewFile(f)
+			if err != nil {
+				return files, err
+			}
+			file.rule = rule
+			files = append(files, file)
 		}
-		file.rule = rule
-		files = append(files, file)
 	}
 	return files, nil
 }
@@ -116,7 +141,12 @@ func (self *File) tail() {
 
 //检查并进行发送
 func checkLineRule(line *string, rule *Rule) {
-	rule.SendData(line)
+	//日志行对象
+	logline := &LogLine{
+		Ts:   time.Now().UTC().UnixNano(),
+		Line: []byte(*line),
+	}
+	rule.SendLogLine(logline)
 }
 
 //关闭规则

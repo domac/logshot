@@ -2,7 +2,7 @@ package logsend
 
 //sender abstract
 type Sender interface {
-	Send(interface{})
+	Send(*LogLine)
 	SetConfig(map[string]string) error
 	Name() string
 	Stop() error

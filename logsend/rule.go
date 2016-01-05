@@ -32,10 +32,10 @@ func NewRule(sregexp string, watchDir string) (*Rule, error) {
 	return rule, nil
 }
 
-//发送数据
-func (rule *Rule) SendData(data interface{}) {
+//发送日志行
+func (rule *Rule) SendLogLine(ll *LogLine) {
 	for _, sender := range rule.senders {
-		sender.Send(data)
+		sender.Send(ll)
 	}
 }
 
