@@ -6,6 +6,7 @@ import (
 	"github.com/howeyc/fsnotify"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 )
 
@@ -34,6 +35,8 @@ func WatchFiles(configFile string) {
 		go file.tail()
 	}
 
+	go continueWatch(&rule.watchDir, rule)
+
 	for {
 		select {
 		case fpath := <-doneCh:
@@ -59,7 +62,7 @@ func assignFiles(allFiles []string, rule *Rule) ([]*File, error) {
 				if err != nil {
 					panic(err)
 				}
-				if !info.IsDir() && info.Name()[0:1] != "." {
+				if !info.IsDir() && !strings.Contains(info.Name(), ".DS_Store") {
 					file, err := NewFile(pth)
 					if err != nil {
 						return err
@@ -82,11 +85,11 @@ func assignFiles(allFiles []string, rule *Rule) ([]*File, error) {
 }
 
 func continueWatch(dir *string, rule *Rule) {
+	//判断dir是否是目录结构
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		Conf.Logger.Fatal(err)
 	}
-
 	done := make(chan bool)
 	go func() {
 		for {
@@ -100,6 +103,11 @@ func continueWatch(dir *string, rule *Rule) {
 			}
 		}
 	}()
+	//监听目录
+	err = watcher.Watch(*dir)
+	if err != nil {
+		Conf.Logger.Fatal(err)
+	}
 	<-done
 	watcher.Close()
 }
