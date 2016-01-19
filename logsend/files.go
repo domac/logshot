@@ -35,6 +35,7 @@ func WatchFiles(configFile string) {
 		go file.tail()
 	}
 
+	//开启监听携程
 	go continueWatch(&rule.watchDir, rule)
 
 	for {
@@ -96,7 +97,7 @@ func continueWatch(dir *string, rule *Rule) {
 			select {
 			case ev := <-watcher.Event:
 				if ev.IsCreate() {
-					println("发现文件创建")
+					println("发现文件创建:", ev.Name)
 				}
 			case err := <-watcher.Error:
 				Conf.Logger.Println("error:", err)
@@ -109,6 +110,8 @@ func continueWatch(dir *string, rule *Rule) {
 		Conf.Logger.Fatal(err)
 	}
 	<-done
+
+	/* ... do stuff ... */
 	watcher.Close()
 }
 
