@@ -4,6 +4,7 @@ import (
 	"github.com/ActiveState/tail"
 	"github.com/Unknwon/com"
 	"github.com/howeyc/fsnotify"
+	"github.com/juju/errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -35,8 +36,10 @@ func WatchFiles(configFile string) {
 		go file.tail()
 	}
 
-	//开启监听携程
-	go continueWatch(&rule.watchDir, rule)
+	//如果监听对象为目录,开启异步监听
+	if com.IsDir(rule.watchDir) {
+		go continueWatch(&rule.watchDir, rule, &assignedFilesCount, doneCh)
+	}
 
 	for {
 		select {
@@ -46,9 +49,22 @@ func WatchFiles(configFile string) {
 				Conf.Logger.Printf("finished reading file %+v", fpath)
 				return
 			}
-
 		}
 	}
+}
+
+//单文件分配
+func assignSingleFile(filepath string, rule *Rule) (*File, error) {
+	is_dir := com.IsDir(filepath)
+	if !is_dir {
+		file, err := NewFile(filepath)
+		if err != nil {
+			return nil, err
+		}
+		file.rule = rule
+		return file, nil
+	}
+	return nil, errors.New("file not found : " + filepath)
 }
 
 //为文件分配规则
@@ -74,18 +90,18 @@ func assignFiles(allFiles []string, rule *Rule) ([]*File, error) {
 				return nil
 			})
 		} else {
-			file, err := NewFile(f)
+			//分配单文件
+			file, err := assignSingleFile(f, rule)
 			if err != nil {
 				return files, err
 			}
-			file.rule = rule
 			files = append(files, file)
 		}
 	}
 	return files, nil
 }
 
-func continueWatch(dir *string, rule *Rule) {
+func continueWatch(dir *string, rule *Rule, totalFileCount *int, doneCh chan string) {
 	//判断dir是否是目录结构
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -97,7 +113,13 @@ func continueWatch(dir *string, rule *Rule) {
 			select {
 			case ev := <-watcher.Event:
 				if ev.IsCreate() {
-					println("发现文件创建:", ev.Name)
+					*totalFileCount = *totalFileCount + 1
+					println("发现文件创建:", ev.Name, "当前监控文件数:", *totalFileCount)
+					file, err := assignSingleFile(ev.Name, rule)
+					if err == nil {
+						file.doneCh = doneCh
+						go file.tail() //异步传输
+					}
 				}
 			case err := <-watcher.Error:
 				Conf.Logger.Println("error:", err)
