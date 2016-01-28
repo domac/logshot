@@ -1,10 +1,10 @@
 package logsend
 
 import (
+	"errors"
 	"github.com/ActiveState/tail"
 	"github.com/Unknwon/com"
 	"github.com/howeyc/fsnotify"
-	"github.com/juju/errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -149,14 +149,19 @@ func NewFile(fpath string) (*File, error) {
 	file := &File{}
 	var err error
 
+	//是否采用低版本的poll监听方式
+	isPoll := Conf.IsPoll
+
+	// Config 中 设置 Poll:true 可以解决 linux 2.6.32以下的监听问题
+	// 2.6.32或以上才有的是 inotity , 但2.6.32以下无法使用, 需要把 Poll打开, 采用 Polling的方式
 	if Conf.ReadWholeLog && Conf.ReadAlway { //全量并持续采集
-		file.Tail, err = tail.TailFile(fpath, tail.Config{Follow: true, ReOpen: true})
+		file.Tail, err = tail.TailFile(fpath, tail.Config{Follow: true, ReOpen: true, Poll: isPoll})
 	} else if Conf.ReadWholeLog { //全量但只采集一次
-		file.Tail, err = tail.TailFile(fpath, tail.Config{})
+		file.Tail, err = tail.TailFile(fpath, tail.Config{Poll: isPoll})
 	} else {
 		//从当前文件最尾端开始采集
 		seekInfo := &tail.SeekInfo{Offset: 0, Whence: 2}
-		file.Tail, err = tail.TailFile(fpath, tail.Config{Follow: true, ReOpen: true, Location: seekInfo})
+		file.Tail, err = tail.TailFile(fpath, tail.Config{Follow: true, ReOpen: true, Poll: isPoll, Location: seekInfo})
 	}
 	return file, err
 }

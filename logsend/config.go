@@ -18,6 +18,7 @@ type Configuration struct {
 	ReadAlway         bool
 	SenderName        string
 	registeredSenders map[string]*SenderRegister
+	IsPoll              bool
 }
 
 var Conf = &Configuration{

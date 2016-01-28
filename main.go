@@ -93,6 +93,14 @@ func main() {
 	logsend.Conf.ReadWholeLog = *readWholeLog
 	logsend.Conf.ReadAlway = *readAlway
 
+	//根据内核版本设置监听方式的配置
+	if !utils.CheckKernalInotifyAbility() {
+		println("watching file using polling !")
+		logsend.Conf.IsPoll = true
+	} else {
+		println("watching file using inotify !")
+	}
+
 	fi, err := os.Stdin.Stat()
 	if err != nil {
 		panic(err)
