@@ -42,7 +42,7 @@ func NewDefaultSender() Sender {
 }
 
 //注入配置
-func (self *DefaultSender) SetConfig(map[string]string) error {
+func (self *DefaultSender) SetConfig(iniConfig map[string]string) error {
 	return nil
 }
 

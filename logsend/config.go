@@ -18,7 +18,7 @@ type Configuration struct {
 	ReadAlway         bool
 	SenderName        string
 	registeredSenders map[string]*SenderRegister
-	IsPoll              bool
+	IsPoll            bool
 }
 
 var Conf = &Configuration{
@@ -53,6 +53,9 @@ func LoadConfigFromFile(fileName string) (rule *Rule, err error) {
 				continue
 			}
 			sender := register.get()
+			if err = sender.SetConfig(val); err != nil {
+				Conf.Logger.Fatalln(err)
+			}
 			senders = append(senders, sender)
 		}
 	}

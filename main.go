@@ -26,7 +26,7 @@ var (
 	logFile = flag.String("log", "/apps/logs/loghub_agent.log", "log file")
 
 	//定义发送sender
-	sender = flag.String("sender", "default", "sender which send data to target node")
+	sender = flag.String("sender", "kafka", "sender which send data to target node")
 
 	//配置文件路径
 	config = flag.String("config", "conf/config.ini", "path to config.json file")
