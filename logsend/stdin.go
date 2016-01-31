@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"flag"
 	"os"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 //处理Pipe的标准输入命令
@@ -14,7 +15,7 @@ func ProcessStdin() error {
 		configFile := rawConfig["config"].(flag.Value).String()
 		rule, err = LoadConfigFromFile(configFile)
 		if err != nil {
-			Conf.Logger.Fatalln("Can't load config", err)
+			log15.Error("Can't load config", err)
 		}
 	}
 	reader := bufio.NewReader(os.Stdin)

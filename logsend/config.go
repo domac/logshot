@@ -5,15 +5,14 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	logpkg "log"
 	"os"
 	"strings"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 //配置结构
 type Configuration struct {
 	WatchDir          string
-	Logger            *logpkg.Logger
 	ReadWholeLog      bool
 	ReadAlway         bool
 	SenderName        string
@@ -23,7 +22,6 @@ type Configuration struct {
 
 var Conf = &Configuration{
 	WatchDir:          "",
-	Logger:            logpkg.New(os.Stderr, "", logpkg.Ldate|logpkg.Ltime|logpkg.Lshortfile),
 	registeredSenders: make(map[string]*SenderRegister),
 }
 
@@ -60,7 +58,7 @@ func LoadConfigFromFile(fileName string) (rule *Rule, err error) {
 			sender := register.get()
 			if err = sender.SetConfig(val); err != nil {
 				sender.Stop()
-				Conf.Logger.Fatalln(err)
+				log15.Error(err.Error())
 			}
 			senders = append(senders, sender)
 		}
@@ -84,7 +82,7 @@ func ReadConfig(cfgFile string) map[string]map[string]string {
 	fin, err := os.OpenFile(cfgFile, os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Println(err)
-		Conf.Logger.Fatal(err)
+		log15.Error(err.Error())
 	}
 	config := make(map[string]map[string]string)
 	config[""] = make(map[string]string)

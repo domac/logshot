@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 	"fmt"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -70,7 +71,7 @@ type KafkaSender struct {
 //1.初始化配置
 //2.监听消息发送通道
 func InitKafka(conf map[string]string) error {
-	Conf.Logger.Printf("kafka sender setting conifig ...")
+	log15.Info("kafka sender setting conifig !!! ")
 	//变量初始化
 	if val, ok := conf["kafkaBatch"]; ok {
 		kBatch, _ = strconv.Atoi(val)

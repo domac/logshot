@@ -3,6 +3,7 @@ package logsend
 import (
 	"os"
 	"regexp"
+	"gopkg.in/inconshreveable/log15.v2"
 )
 
 //规则引擎
@@ -22,7 +23,7 @@ func NewRule(sregexp string, watchDir string) (*Rule, error) {
 	//对watch dir 进行判断
 	fi, fi_err := os.Stat(watchDir)
 	if fi == nil {
-		Conf.Logger.Fatalln("watch dir didn't exists !")
+		log15.Info("watch dir didn't exists !")
 		return rule, fi_err
 	}
 	//对正则进行校验
