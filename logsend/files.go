@@ -168,8 +168,12 @@ func NewFile(fpath string) (*File, error) {
 
 func (self *File) tail() {
 	Conf.Logger.Printf("start tailing %+v", self.Tail.Filename)
+
+	//功能收尾
 	defer func() {
+		//关闭Sender初始化过程中建立的通讯
 		closeRule(self.rule)
+		//通知结束通道,让主调用方结束
 		self.doneCh <- self.Tail.Filename
 	}()
 	for line := range self.Tail.Lines {

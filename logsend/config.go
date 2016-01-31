@@ -48,12 +48,18 @@ func LoadConfigFromFile(fileName string) (rule *Rule, err error) {
 			continue
 		}
 		if val, ok := config[sender_name]; ok {
-			register.Init(val)
+			err = register.Init(val)
+
+			if err != nil {
+				panic(err)
+			}
+
 			if register.initialized != true {
 				continue
 			}
 			sender := register.get()
 			if err = sender.SetConfig(val); err != nil {
+				sender.Stop()
 				Conf.Logger.Fatalln(err)
 			}
 			senders = append(senders, sender)

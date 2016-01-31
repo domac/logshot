@@ -18,14 +18,14 @@ type DefaultSender struct {
 
 //1.初始化配置
 //2.监听消息发送通道
-func InitDefault(conf map[string]string) {
+func InitDefault(conf map[string]string) error {
 	go func() {
 		//阻塞的方式接收defaultSendCh的消息
 		for data := range defaultSendCh {
 			handleData(data)
 		}
 	}()
-	return
+	return nil
 }
 
 //处理日志数据

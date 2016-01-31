@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"fmt"
 )
 
 var (
@@ -38,6 +39,7 @@ func NewKafkaProducer(brokers []string, topic string, bufferTime, bufferBytes, b
 	config.Producer.Flush.Messages = batchSz
 	p, err := sarama.NewAsyncProducer(brokers, config)
 	if err != nil {
+		fmt.Println("kafka connect fialure ....")
 		return nil, err
 	}
 	k := &KafkaProducer{
@@ -67,7 +69,7 @@ type KafkaSender struct {
 
 //1.初始化配置
 //2.监听消息发送通道
-func InitKafka(conf map[string]string) {
+func InitKafka(conf map[string]string) error {
 	Conf.Logger.Printf("kafka sender setting conifig ...")
 	//变量初始化
 	if val, ok := conf["kafkaBatch"]; ok {
@@ -86,17 +88,24 @@ func InitKafka(conf map[string]string) {
 		kBufferBytes, _ = strconv.Atoi(val)
 	}
 	//创建kafka的生产者
-	myproducer, _ = NewKafkaProducer(
+	var err error
+	myproducer, err = NewKafkaProducer(
 		strings.Split(kBrokers, ","),
 		kTopic, kBufferTime,
 		kBufferBytes, kBatch)
+
+	//如果连接失效,直接返回
+	if err != nil {
+		return err
+	}
+
 	go func() {
 		//阻塞的方式接收prodChan的消息
 		for data := range prodChan {
 			myproducer.Write(string(data.Line))
 		}
 	}()
-	return
+	return nil
 }
 
 //工厂类,生成本Sender
