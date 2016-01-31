@@ -17,32 +17,33 @@ const (
 )
 
 var (
-//检测配置文件是否存在或是否定义配置文件
+	//检测配置文件是否存在或是否定义配置文件
 	check = flag.Bool("check", false, "check config.json")
 
-//输出Agent版本信息
+	//输出Agent版本信息
 	version = flag.Bool("version", false, "show version number")
 
-//应用自身日志输出文件
+	//应用自身日志输出文件
 	logFile = flag.String("log", "/apps/logs/loghub_agent.log", "log file")
 
-//定义发送sender
+	//定义发送sender
 	sender = flag.String("sender", "default", "sender which send data to target node")
 
-//配置文件路径
+	//配置文件路径
 	config = flag.String("config", "conf/config.ini", "path to config.json file")
 
-//读取整个日志文件
+	//读取整个日志文件
 	readWholeLog = flag.Bool("readall", false, "read whole logs")
 
-//一直读取文件
+	//一直读取文件
 	readAlway = flag.Bool("alway", true, "read logs once and exit")
 
-//是否生成性能文件
+	//是否生成性能文件
 	profile = flag.Bool("profile", false, "gen profile or not")
 )
 
 func init() {
+	//设置日志输出handler
 	log15.Root().SetHandler(log15.MultiHandler(
 		log15.LvlFilterHandler(log15.LvlInfo, ext.FatalHandler(log15.StderrHandler)),
 		log15.Must.FileHandler(*logFile, logsend.AgentFormat()),
@@ -103,7 +104,7 @@ func main() {
 		panic(err)
 	}
 
-	if fi.Mode() & os.ModeNamedPipe == 0 {
+	if fi.Mode()&os.ModeNamedPipe == 0 {
 		logsend.WatchFiles(*config)
 	} else {
 		//Pipe的形式
