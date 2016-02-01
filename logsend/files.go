@@ -151,11 +151,9 @@ func NewFile(fpath string) (*File, error) {
 	file := &File{}
 	var err error
 
-	//是否采用低版本的poll监听方式
+	//是否采用低版本的poll监听方式(dawin除外)
+	//Linux2.6.32以下无法使用inotity,需要把Poll打开,采用 Polling的方式
 	isPoll := Conf.IsPoll
-
-	// Config 中 设置 Poll:true 可以解决 linux 2.6.32以下的监听问题
-	// 2.6.32或以上才有的是 inotity , 但2.6.32以下无法使用, 需要把 Poll打开, 采用 Polling的方式
 	if Conf.ReadWholeLog && Conf.ReadAlway { //全量并持续采集
 		file.Tail, err = tail.TailFile(fpath, tail.Config{
 			Follow: true,
@@ -165,6 +163,7 @@ func NewFile(fpath string) (*File, error) {
 		})
 	} else if Conf.ReadWholeLog { //全量但只采集一次
 		file.Tail, err = tail.TailFile(fpath, tail.Config{
+			ReOpen: true,
 			Poll:   isPoll,
 			Logger: logger.GetLogger(), //使用自定义的日志器
 		})

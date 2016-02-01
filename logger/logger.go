@@ -13,7 +13,7 @@ const (
 	VERBOSELV
 )
 
-//配置文件字符串形式
+//配置文件字符串形式 (主要是为了免去读取磁盘XML配置文件带来的少量IO消耗)
 var configstring = `
 <seelog minlevel="debug">
     <outputs>
@@ -48,7 +48,6 @@ func GetLogger() *SenderLogger {
 }
 
 func init() {
-
 	pkglogger, err := log.LoggerFromConfigAsString(configstring)
 	if err != nil {
 		log.Critical("err parsing config log file", err)
