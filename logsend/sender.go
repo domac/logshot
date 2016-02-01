@@ -20,7 +20,7 @@ func RegisterNewSender(name string, init func(map[string]string) error, get func
 		get:  get,
 	}
 	Conf.registeredSenders[name] = sender
-	logger.Infoln(fmt.Sprint("register sender:", name))
+	logger.GetLogger().Infoln(fmt.Sprint("register sender:", name))
 	return
 }
 
@@ -33,7 +33,7 @@ type SenderRegister struct {
 func (self *SenderRegister) Init(val map[string]string) error {
 	err := self.init(val)
 	if err != nil {
-		logger.Errorln(err)
+		logger.GetLogger().Errorln(err)
 		return errors.New("sender init error")
 	}
 	self.initialized = true

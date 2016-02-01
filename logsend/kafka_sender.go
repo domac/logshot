@@ -31,16 +31,20 @@ type KafkaProducer struct {
 
 //构造生产者
 func NewKafkaProducer(brokers []string, topic string, bufferTime, bufferBytes, batchSz int) (*KafkaProducer, error) {
-	logger.Infoln("初始化kafka")
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForLocal     // Only wait for the leader to ack
 	config.Producer.Compression = sarama.CompressionSnappy // Compress messages
 	config.Producer.Flush.Bytes = bufferBytes
 	config.Producer.Flush.Frequency = time.Duration(bufferTime * 1000000)
 	config.Producer.Flush.Messages = batchSz
+
+	//设置超时
+	config.Net.DialTimeout = time.Second * 2
+	config.Net.WriteTimeout = time.Second * 30
+
 	p, err := sarama.NewAsyncProducer(brokers, config)
 	if err != nil {
-		logger.Infoln(err)
+		logger.GetLogger().Errorln(err)
 		return nil, err
 	}
 	k := &KafkaProducer{

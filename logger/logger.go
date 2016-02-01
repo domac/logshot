@@ -37,37 +37,79 @@ var configstring = `
 </seelog>
 `
 
+var sendlog *SenderLogger
+
+type SenderLogger struct {
+	LOG log.LoggerInterface
+}
+
+func GetLogger() *SenderLogger {
+	return sendlog
+}
+
 func init() {
 
-
-	logger, err := log.LoggerFromConfigAsString(configstring)
+	pkglogger, err := log.LoggerFromConfigAsString(configstring)
 	if err != nil {
 		log.Critical("err parsing config log file", err)
 		return
 	}
-	log.ReplaceLogger(logger)
+	//log.ReplaceLogger(pkglogger)
+	sendlog = &SenderLogger{
+		LOG: pkglogger,
+	}
 }
 
-func Infoln(v ...interface{}) {
-	log.Info(v)
+func (self *SenderLogger) Infoln(v ...interface{}) {
+	self.LOG.Info(v)
 }
 
-func Infof(format string, params ...interface{}) {
-	log.Infof(format, params)
+func (self *SenderLogger) Infof(format string, params ...interface{}) {
+	self.LOG.Infof(format, params)
 }
 
-func Errorln(v ...interface{}) {
-	log.Error(v)
+func (self *SenderLogger) Errorln(v ...interface{}) {
+	self.LOG.Error(v)
 }
 
-func Errorf(format string, params ...interface{}) {
-	log.Errorf(format, params)
+func (self *SenderLogger) Errorf(format string, params ...interface{}) {
+	self.LOG.Errorf(format, params)
 }
 
-func Warnln(v ...interface{}) {
-	log.Warn(v)
+func (self *SenderLogger) Warnln(v ...interface{}) {
+	self.LOG.Warn(v)
 }
 
-func Warnf(format string, params ...interface{}) {
-	log.Warnf(format, params)
+func (self *SenderLogger) Warnf(format string, params ...interface{}) {
+	self.LOG.Warnf(format, params)
+}
+
+// -------  log interface ------ //
+
+func (self *SenderLogger) Fatal(v ...interface{}) {
+	self.LOG.Error(v...)
+}
+func (self *SenderLogger) Fatalf(format string, v ...interface{}) {
+	self.LOG.Errorf(format, v...)
+}
+func (self *SenderLogger) Fatalln(v ...interface{}) {
+	self.LOG.Error(v...)
+}
+func (self *SenderLogger) Panic(v ...interface{}) {
+	self.LOG.Error(v...)
+}
+func (self *SenderLogger) Panicf(format string, v ...interface{}) {
+	self.LOG.Errorf(format, v...)
+}
+func (self *SenderLogger) Panicln(v ...interface{}) {
+	self.LOG.Error(v...)
+}
+func (self *SenderLogger) Print(v ...interface{}) {
+	self.LOG.Info(v...)
+}
+func (self *SenderLogger) Printf(format string, v ...interface{}) {
+	self.LOG.Infof(format, v...)
+}
+func (self *SenderLogger) Println(v ...interface{}) {
+	self.LOG.Info(v...)
 }

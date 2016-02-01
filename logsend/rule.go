@@ -23,7 +23,7 @@ func NewRule(sregexp string, watchDir string) (*Rule, error) {
 	//对watch dir 进行判断
 	fi, fi_err := os.Stat(watchDir)
 	if fi == nil {
-		logger.Infoln("watch dir didn't exists !")
+		logger.GetLogger().Infoln("watch dir didn't exists !")
 		return rule, fi_err
 	}
 	//对正则进行校验

@@ -58,7 +58,7 @@ func LoadConfigFromFile(fileName string) (rule *Rule, err error) {
 			sender := register.get()
 			if err = sender.SetConfig(val); err != nil {
 				sender.Stop()
-				logger.Errorln(err.Error())
+				logger.GetLogger().Errorln(err.Error())
 			}
 			senders = append(senders, sender)
 		}
@@ -82,7 +82,7 @@ func ReadConfig(cfgFile string) map[string]map[string]string {
 	fin, err := os.OpenFile(cfgFile, os.O_RDWR, 0644)
 	if err != nil {
 		fmt.Println(err)
-		logger.Errorln(err.Error())
+		logger.GetLogger().Errorln(err.Error())
 	}
 	config := make(map[string]map[string]string)
 	config[""] = make(map[string]string)

@@ -2,22 +2,22 @@ package logsend
 
 import (
 	"errors"
+	"fmt"
 	"github.com/ActiveState/tail"
 	"github.com/Unknwon/com"
 	"github.com/howeyc/fsnotify"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
-	"fmt"
 	"study2016/logshot/logger"
+	"time"
 )
 
 //监听文件
 func WatchFiles(configFile string) {
 	rule, err := LoadConfigFromFile(configFile)
 	if err != nil {
-		logger.Errorln("Can't load config", err)
+		logger.GetLogger().Errorln("Can't load config", err)
 	}
 	files := make([]string, 0)
 	files = append(files, rule.watchDir)
@@ -28,7 +28,7 @@ func WatchFiles(configFile string) {
 	assignedFilesCount := len(assignedFiles)
 
 	if err != nil {
-		logger.Errorln("can't assign file per rule", err)
+		logger.GetLogger().Errorln("can't assign file per rule", err)
 	}
 
 	doneCh := make(chan string)
@@ -48,7 +48,7 @@ func WatchFiles(configFile string) {
 		case fpath := <-doneCh:
 			assignedFilesCount = assignedFilesCount - 1
 			if assignedFilesCount == 0 {
-				logger.Errorln("finished reading file %+v", fpath)
+				logger.GetLogger().Errorln("finished reading file %+v", fpath)
 				return
 			}
 		}
@@ -107,7 +107,7 @@ func continueWatch(dir *string, rule *Rule, totalFileCount *int, doneCh chan str
 	//判断dir是否是目录结构
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		logger.Errorln(err.Error())
+		logger.GetLogger().Errorln(err.Error())
 	}
 	done := make(chan bool)
 	go func() {
@@ -124,14 +124,14 @@ func continueWatch(dir *string, rule *Rule, totalFileCount *int, doneCh chan str
 					}
 				}
 			case err := <-watcher.Error:
-				logger.Errorln("error:", err)
+				logger.GetLogger().Errorln("error:", err)
 			}
 		}
 	}()
 	//监听目录
 	err = watcher.Watch(*dir)
 	if err != nil {
-		logger.Errorln(err.Error())
+		logger.GetLogger().Errorln(err.Error())
 	}
 	<-done
 
@@ -157,19 +157,33 @@ func NewFile(fpath string) (*File, error) {
 	// Config 中 设置 Poll:true 可以解决 linux 2.6.32以下的监听问题
 	// 2.6.32或以上才有的是 inotity , 但2.6.32以下无法使用, 需要把 Poll打开, 采用 Polling的方式
 	if Conf.ReadWholeLog && Conf.ReadAlway { //全量并持续采集
-		file.Tail, err = tail.TailFile(fpath, tail.Config{Follow: true, ReOpen: true, Poll: isPoll})
+		file.Tail, err = tail.TailFile(fpath, tail.Config{
+			Follow: true,
+			ReOpen: true,
+			Poll:   isPoll,
+			Logger: logger.GetLogger(), //使用自定义的日志器
+		})
 	} else if Conf.ReadWholeLog { //全量但只采集一次
-		file.Tail, err = tail.TailFile(fpath, tail.Config{Poll: isPoll})
+		file.Tail, err = tail.TailFile(fpath, tail.Config{
+			Poll:   isPoll,
+			Logger: logger.GetLogger(), //使用自定义的日志器
+		})
 	} else {
 		//从当前文件最尾端开始采集
 		seekInfo := &tail.SeekInfo{Offset: 0, Whence: 2}
-		file.Tail, err = tail.TailFile(fpath, tail.Config{Follow: true, ReOpen: true, Poll: isPoll, Location: seekInfo})
+		file.Tail, err = tail.TailFile(fpath, tail.Config{
+			Follow:   true,
+			ReOpen:   true,
+			Poll:     isPoll,
+			Location: seekInfo,
+			Logger:   logger.GetLogger(), //使用自定义的日志器
+		})
 	}
 	return file, err
 }
 
 func (self *File) tail() {
-	logger.Infoln(fmt.Sprintf("start tailing %s", self.Tail.Filename))
+	logger.GetLogger().Infoln(fmt.Sprintf("start tailing %s", self.Tail.Filename))
 
 	//功能收尾
 	defer func() {

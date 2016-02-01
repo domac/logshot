@@ -62,7 +62,7 @@ func main() {
 		//载入配置文件
 		_, err := logsend.LoadConfigFromFile(*config)
 		if err != nil {
-			logger.Errorln("[config file] fail", err)
+			logger.GetLogger().Errorln("[config file] fail", err)
 			os.Exit(1)
 		}
 		fmt.Println("[Config file] ok")
@@ -70,7 +70,7 @@ func main() {
 		//检查os的版本号 (2.6.37以下版本的linux无法使用 fsnotity watch 方式, 需要通过pipe方式)
 		out, err := exec.Command("uname", "-r").Output()
 		if out != nil {
-			logger.Errorln("[Kernel version] " + string(out))
+			logger.GetLogger().Errorln("[Kernel version] " + string(out))
 		}
 		os.Exit(0)
 	}
@@ -89,10 +89,10 @@ func main() {
 
 	//根据内核版本设置监听方式的配置
 	if !utils.CheckKernalInotifyAbility() {
-		logger.Infoln("watching file using polling !")
+		logger.GetLogger().Infoln("watching file using polling !")
 		logsend.Conf.IsPoll = true
 	} else {
-		logger.Infoln("watching file using inotify !")
+		logger.GetLogger().Infoln("watching file using inotify !")
 	}
 
 	fi, err := os.Stdin.Stat()

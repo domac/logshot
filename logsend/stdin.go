@@ -15,7 +15,7 @@ func ProcessStdin() error {
 		configFile := rawConfig["config"].(flag.Value).String()
 		rule, err = LoadConfigFromFile(configFile)
 		if err != nil {
-			logger.Errorln("Can't load config", err)
+			logger.GetLogger().Errorln("Can't load config", err)
 		}
 	}
 	reader := bufio.NewReader(os.Stdin)
