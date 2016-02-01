@@ -13,8 +13,34 @@ const (
 	VERBOSELV
 )
 
+//配置文件字符串形式
+var configstring = `
+<seelog minlevel="debug">
+    <outputs>
+        <filter levels="debug">
+            <rollingfile formatid="sended" type="date" filename="/apps/logs/logshot/agent.log" datepattern="2006-01-02" />
+        </filter>
+        <filter levels="info">
+            <console formatid="info"/>
+            <rollingfile formatid="info" type="date" filename="/apps/logs/logshot/agent.log"  datepattern="2006-01-02" />
+        </filter>
+        <filter levels="warn,error,critical">
+            <console formatid="error"/>
+            <rollingfile formatid="error" type="date" filename="/apps/logs/logshot/agent_errors.log"  datepattern="2006-01-02" />
+        </filter>
+    </outputs>
+    <formats>
+        <format id="sended" format="%Date %Time [%Level] %Msg%n"/>
+        <format id="info" format="%Date %Time [%Level] %Msg%n"/>
+        <format id="error" format="%Date %Time [%Level] %Msg%n"/>
+    </formats>
+</seelog>
+`
+
 func init() {
-	logger, err := log.LoggerFromConfigAsFile("logger/seelog.xml")
+
+
+	logger, err := log.LoggerFromConfigAsString(configstring)
 	if err != nil {
 		log.Critical("err parsing config log file", err)
 		return
