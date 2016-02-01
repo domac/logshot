@@ -3,13 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"gopkg.in/inconshreveable/log15.v2"
-	"gopkg.in/inconshreveable/log15.v2/ext"
 	"os"
 	"os/exec"
 	"runtime"
 	"study2016/logshot/logsend"
 	"study2016/logshot/utils"
+	"study2016/logshot/logger"
 )
 
 const (
@@ -24,10 +23,10 @@ var (
 	version = flag.Bool("version", false, "show version number")
 
 	//应用自身日志输出文件
-	logFile = flag.String("log", "/apps/logs/loghub_agent.log", "log file")
+	//logFile = flag.String("log", "/apps/logs/loghub_agent.log", "log file")
 
 	//定义发送sender
-	sender = flag.String("sender", "default", "sender which send data to target node")
+	sender = flag.String("sender", "kafka", "sender which send data to target node")
 
 	//配置文件路径
 	config = flag.String("config", "conf/config.ini", "path to config.json file")
@@ -44,10 +43,7 @@ var (
 
 func init() {
 	//设置日志输出handler
-	log15.Root().SetHandler(log15.MultiHandler(
-		log15.LvlFilterHandler(log15.LvlInfo, ext.FatalHandler(log15.StderrHandler)),
-		log15.Must.FileHandler(*logFile, logsend.AgentFormat()),
-	))
+
 }
 
 func main() {
@@ -66,7 +62,7 @@ func main() {
 		//载入配置文件
 		_, err := logsend.LoadConfigFromFile(*config)
 		if err != nil {
-			log15.Error("[config file] fail", err)
+			logger.Errorln("[config file] fail", err)
 			os.Exit(1)
 		}
 		fmt.Println("[Config file] ok")
@@ -74,7 +70,7 @@ func main() {
 		//检查os的版本号 (2.6.37以下版本的linux无法使用 fsnotity watch 方式, 需要通过pipe方式)
 		out, err := exec.Command("uname", "-r").Output()
 		if out != nil {
-			log15.Error("[Kernel version] " + string(out))
+			logger.Errorln("[Kernel version] " + string(out))
 		}
 		os.Exit(0)
 	}
@@ -93,10 +89,10 @@ func main() {
 
 	//根据内核版本设置监听方式的配置
 	if !utils.CheckKernalInotifyAbility() {
-		log15.Info("watching file using polling !")
+		logger.Infoln("watching file using polling !")
 		logsend.Conf.IsPoll = true
 	} else {
-		log15.Info("watching file using inotify !")
+		logger.Infoln("watching file using inotify !")
 	}
 
 	fi, err := os.Stdin.Stat()

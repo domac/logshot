@@ -9,15 +9,15 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-	"gopkg.in/inconshreveable/log15.v2"
 	"fmt"
+	"study2016/logshot/logger"
 )
 
 //监听文件
 func WatchFiles(configFile string) {
 	rule, err := LoadConfigFromFile(configFile)
 	if err != nil {
-		log15.Error("Can't load config", err)
+		logger.Errorln("Can't load config", err)
 	}
 	files := make([]string, 0)
 	files = append(files, rule.watchDir)
@@ -28,7 +28,7 @@ func WatchFiles(configFile string) {
 	assignedFilesCount := len(assignedFiles)
 
 	if err != nil {
-		log15.Error("can't assign file per rule", err)
+		logger.Errorln("can't assign file per rule", err)
 	}
 
 	doneCh := make(chan string)
@@ -48,7 +48,7 @@ func WatchFiles(configFile string) {
 		case fpath := <-doneCh:
 			assignedFilesCount = assignedFilesCount - 1
 			if assignedFilesCount == 0 {
-				log15.Error("finished reading file %+v", fpath)
+				logger.Errorln("finished reading file %+v", fpath)
 				return
 			}
 		}
@@ -107,7 +107,7 @@ func continueWatch(dir *string, rule *Rule, totalFileCount *int, doneCh chan str
 	//判断dir是否是目录结构
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log15.Error(err.Error())
+		logger.Errorln(err.Error())
 	}
 	done := make(chan bool)
 	go func() {
@@ -124,14 +124,14 @@ func continueWatch(dir *string, rule *Rule, totalFileCount *int, doneCh chan str
 					}
 				}
 			case err := <-watcher.Error:
-				log15.Error("error:", err)
+				logger.Errorln("error:", err)
 			}
 		}
 	}()
 	//监听目录
 	err = watcher.Watch(*dir)
 	if err != nil {
-		log15.Error(err.Error())
+		logger.Errorln(err.Error())
 	}
 	<-done
 
@@ -169,7 +169,7 @@ func NewFile(fpath string) (*File, error) {
 }
 
 func (self *File) tail() {
-	log15.Info(fmt.Sprintf("start tailing %s", self.Tail.Filename))
+	logger.Infoln(fmt.Sprintf("start tailing %s", self.Tail.Filename))
 
 	//功能收尾
 	defer func() {

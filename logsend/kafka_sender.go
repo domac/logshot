@@ -4,9 +4,8 @@ import (
 	"github.com/Shopify/sarama"
 	"strconv"
 	"strings"
+	"study2016/logshot/logger"
 	"time"
-	"fmt"
-	"gopkg.in/inconshreveable/log15.v2"
 )
 
 var (
@@ -32,6 +31,7 @@ type KafkaProducer struct {
 
 //构造生产者
 func NewKafkaProducer(brokers []string, topic string, bufferTime, bufferBytes, batchSz int) (*KafkaProducer, error) {
+	logger.Infoln("初始化kafka")
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForLocal     // Only wait for the leader to ack
 	config.Producer.Compression = sarama.CompressionSnappy // Compress messages
@@ -40,7 +40,7 @@ func NewKafkaProducer(brokers []string, topic string, bufferTime, bufferBytes, b
 	config.Producer.Flush.Messages = batchSz
 	p, err := sarama.NewAsyncProducer(brokers, config)
 	if err != nil {
-		fmt.Println("kafka connect fialure ....")
+		logger.Infoln(err)
 		return nil, err
 	}
 	k := &KafkaProducer{
@@ -71,7 +71,6 @@ type KafkaSender struct {
 //1.初始化配置
 //2.监听消息发送通道
 func InitKafka(conf map[string]string) error {
-	log15.Info("kafka sender setting conifig !!! ")
 	//变量初始化
 	if val, ok := conf["kafkaBatch"]; ok {
 		kBatch, _ = strconv.Atoi(val)

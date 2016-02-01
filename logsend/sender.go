@@ -1,9 +1,9 @@
 package logsend
 
 import (
+	"errors"
 	"fmt"
-	"github.com/juju/errors"
-	"gopkg.in/inconshreveable/log15.v2"
+	"study2016/logshot/logger"
 )
 
 //sender abstract
@@ -20,7 +20,7 @@ func RegisterNewSender(name string, init func(map[string]string) error, get func
 		get:  get,
 	}
 	Conf.registeredSenders[name] = sender
-	log15.Info(fmt.Sprint("register sender:", name))
+	logger.Infoln(fmt.Sprint("register sender:", name))
 	return
 }
 
@@ -33,6 +33,7 @@ type SenderRegister struct {
 func (self *SenderRegister) Init(val map[string]string) error {
 	err := self.init(val)
 	if err != nil {
+		logger.Errorln(err)
 		return errors.New("sender init error")
 	}
 	self.initialized = true
