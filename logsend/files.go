@@ -13,6 +13,9 @@ import (
 	"time"
 )
 
+//监听的路径-文件映射
+var WatcherMap map[string]*File = make(map[string]*File)
+
 //监听文件
 func WatchFiles(configFile string) {
 	rule, err := LoadConfigFromFile(configFile)
@@ -87,7 +90,7 @@ func assignFiles(allFiles []string, rule *Rule) ([]*File, error) {
 						return err
 					}
 					file.rule = rule
-					files = append(files, file)
+					files = appendWatch(files, file)
 				}
 				return nil
 			})
@@ -97,10 +100,18 @@ func assignFiles(allFiles []string, rule *Rule) ([]*File, error) {
 			if err != nil {
 				return files, err
 			}
-			files = append(files, file)
+			files = appendWatch(files, file)
 		}
 	}
 	return files, nil
+}
+
+func appendWatch(files []*File, file *File) []*File {
+	WatcherMap[file.Tail.Filename] = file
+	if files != nil {
+		files = append(files, file)
+	}
+	return files
 }
 
 func continueWatch(dir *string, rule *Rule, totalFileCount *int, doneCh chan string) {
@@ -118,12 +129,20 @@ func continueWatch(dir *string, rule *Rule, totalFileCount *int, doneCh chan str
 					*totalFileCount = *totalFileCount + 1
 					println("发现文件创建:", ev.Name, "当前监控文件数:", *totalFileCount)
 					file, err := assignSingleFile(ev.Name, rule)
+					appendWatch(nil, file)
 					if err == nil {
 						file.doneCh = doneCh
 						go file.tail() //异步传输
 					}
 				} else if ev.IsDelete() { //文件被删除的情况,需要进行资源回收
 					//获取被删除的file对象,并发完成消息到其doneCh
+					logger.GetLogger().Infof("tailing file is deleted : %s \n ", ev.Name)
+					if delete_file, ok := WatcherMap[ev.Name]; ok {
+						delete(WatcherMap, ev.Name)
+						delete_file.Tail.Stop()// stop the line tail
+					} else {
+						logger.GetLogger().Errorf("get delete file fail : %s", ev.Name)
+					}
 				}
 			case err := <-watcher.Error:
 				logger.GetLogger().Errorln("error:", err)
@@ -153,7 +172,7 @@ func NewFile(fpath string) (*File, error) {
 	file := &File{}
 	var err error
 
-	//是否采用低版本的poll监听方式(dawin除外)
+	//是否采用低版本的poll监听方式(darwin除外)
 	//Linux2.6.32以下无法使用inotity,需要把Poll打开,采用 Polling的方式
 	isPoll := Conf.IsPoll
 	if Conf.ReadWholeLog && Conf.ReadAlway { //全量并持续采集
@@ -165,7 +184,6 @@ func NewFile(fpath string) (*File, error) {
 		})
 	} else if Conf.ReadWholeLog { //全量但只采集一次
 		file.Tail, err = tail.TailFile(fpath, tail.Config{
-			ReOpen: true,
 			Poll:   isPoll,
 			Logger: logger.GetLogger(), //使用自定义的日志器
 		})

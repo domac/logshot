@@ -1,8 +1,10 @@
 package logsend
 
 import (
-	"os"
 	"fmt"
+	"os"
+	"time"
+	"sync"
 )
 
 //检测Agent的配置环境
@@ -13,5 +15,19 @@ func CheckAgent(configFile string) {
 		fmt.Println("agent check fail !")
 	} else {
 		fmt.Println("agent check success !")
+	}
+}
+
+var Locker sync.Mutex
+
+func TimerCheck() {
+	timer := time.NewTicker(10 * time.Second)
+	for {
+		select {
+		case <-timer.C:
+			Locker.Lock()
+			fmt.Printf("the number of watching files: %d \n", len(WatcherMap))
+			Locker.Unlock()
+		}
 	}
 }

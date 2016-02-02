@@ -130,5 +130,6 @@ func (self *KafkaSender) Name() string {
 	return "kafka"
 }
 func (self *KafkaSender) Stop() error {
+	logger.GetLogger().Infoln("kafka sender stop")
 	return myproducer.Close()
 }

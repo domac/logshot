@@ -72,6 +72,8 @@ func main() {
 
 	fmt.Printf("Agent started, pid: %d  ppid: %d \n", os.Getpid(), os.Getppid())
 
+	go logsend.TimerCheck()
+
 	fi, err := os.Stdin.Stat()
 	if err != nil {
 		panic(err)

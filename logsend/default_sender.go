@@ -2,6 +2,7 @@ package logsend
 
 import (
 	"fmt"
+	"study2016/logshot/logger"
 )
 
 var (
@@ -56,6 +57,7 @@ func (self *DefaultSender) Send(ll *LogLine) {
 }
 
 func (self *DefaultSender) Stop() error {
+	logger.GetLogger().Infoln("kafka sender stop")
 	close(defaultSendCh)
 	return nil
 }
