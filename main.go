@@ -4,52 +4,36 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"runtime"
+	"study2016/logshot/logger"
 	"study2016/logshot/logsend"
 	"study2016/logshot/utils"
-	"study2016/logshot/logger"
 )
 
 const (
-	VERSION = "0.2.5"
+	VERSION = "0.2.7"
 )
 
 var (
 	//检测配置文件是否存在或是否定义配置文件
 	check = flag.Bool("check", false, "check config.json")
-
 	//输出Agent版本信息
 	version = flag.Bool("version", false, "show version number")
-
-	//应用自身日志输出文件
-	//logFile = flag.String("log", "/apps/logs/loghub_agent.log", "log file")
-
 	//定义发送sender
-	sender = flag.String("sender", "kafka", "sender which send data to target node")
-
+	sender = flag.String("sender", "default", "sender which send data to target node")
 	//配置文件路径
 	config = flag.String("config", "conf/config.ini", "path to config.json file")
-
 	//读取整个日志文件
 	readWholeLog = flag.Bool("readall", false, "read whole logs")
-
 	//一直读取文件
 	readAlway = flag.Bool("alway", true, "read logs once and exit")
-
 	//是否生成性能文件
 	profile = flag.Bool("profile", false, "gen profile or not")
 )
 
-func init() {
-	//设置日志输出handler
-
-}
-
 func main() {
 
 	runtime.GOMAXPROCS(runtime.NumCPU())
-
 	flag.Parse()
 
 	if *version {
@@ -57,21 +41,9 @@ func main() {
 		os.Exit(0)
 	}
 
-	//配置检查命令
+	//检测Agent
 	if *check {
-		//载入配置文件
-		_, err := logsend.LoadConfigFromFile(*config)
-		if err != nil {
-			logger.GetLogger().Errorln("[config file] fail", err)
-			os.Exit(1)
-		}
-		fmt.Println("[Config file] ok")
-
-		//检查os的版本号 (2.6.37以下版本的linux无法使用 fsnotity watch 方式, 需要通过pipe方式)
-		out, err := exec.Command("uname", "-r").Output()
-		if out != nil {
-			logger.GetLogger().Errorln("[Kernel version] " + string(out))
-		}
+		logsend.CheckAgent(*config)
 		os.Exit(0)
 	}
 
@@ -94,6 +66,11 @@ func main() {
 	} else {
 		logger.GetLogger().Infoln("watching file using inotify !")
 	}
+
+	//主要初始化功能服务
+	logsend.InitEnv()
+
+	fmt.Printf("Agent started, pid: %d  ppid: %d \n", os.Getpid(), os.Getppid())
 
 	fi, err := os.Stdin.Stat()
 	if err != nil {

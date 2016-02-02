@@ -77,9 +77,10 @@ func LoadConfigFromFile(fileName string) (rule *Rule, err error) {
 	return
 }
 
-//读取配置文件
+//读取ini格式的配置文件
 func ReadConfig(cfgFile string) map[string]map[string]string {
 	fin, err := os.OpenFile(cfgFile, os.O_RDWR, 0644)
+	defer fin.Close()
 	if err != nil {
 		fmt.Println(err)
 		logger.GetLogger().Errorln(err.Error())
@@ -112,6 +113,5 @@ func ReadConfig(cfgFile string) map[string]map[string]string {
 			config[section][key] = val
 		}
 	}
-	fin.Close()
 	return config
 }

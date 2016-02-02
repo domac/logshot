@@ -13,7 +13,7 @@ const (
 	VERBOSELV
 )
 
-//配置文件字符串形式 (主要是为了免去读取磁盘XML配置文件带来的少量IO消耗)
+//配置文件字符串形式
 var configstring = `
 <seelog minlevel="debug">
     <outputs>

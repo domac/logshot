@@ -122,6 +122,8 @@ func continueWatch(dir *string, rule *Rule, totalFileCount *int, doneCh chan str
 						file.doneCh = doneCh
 						go file.tail() //异步传输
 					}
+				} else if ev.IsDelete() { //文件被删除的情况,需要进行资源回收
+					//获取被删除的file对象,并发完成消息到其doneCh
 				}
 			case err := <-watcher.Error:
 				logger.GetLogger().Errorln("error:", err)
@@ -189,6 +191,7 @@ func (self *File) tail() {
 		//关闭Sender初始化过程中建立的通讯
 		closeRule(self.rule)
 		//通知结束通道,让主调用方结束
+		logger.GetLogger().Infof("file-watching has done : %s", self.Tail.Filename)
 		self.doneCh <- self.Tail.Filename
 	}()
 	for line := range self.Tail.Lines {

@@ -39,8 +39,8 @@ func NewKafkaProducer(brokers []string, topic string, bufferTime, bufferBytes, b
 	config.Producer.Flush.Messages = batchSz
 
 	//设置超时
-	config.Net.DialTimeout = time.Second * 2
-	config.Net.WriteTimeout = time.Second * 30
+	config.Net.DialTimeout = time.Second * 15
+	config.Net.WriteTimeout = time.Second * 15
 
 	p, err := sarama.NewAsyncProducer(brokers, config)
 	if err != nil {
