@@ -2,11 +2,11 @@ package logsend
 
 import (
 	"github.com/Shopify/sarama"
-	"github.com/juju/errors"
 	"strconv"
 	"strings"
 	"study2016/logshot/logger"
 	"time"
+	"errors"
 )
 
 var (
