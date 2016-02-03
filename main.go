@@ -20,7 +20,7 @@ var (
 	//输出Agent版本信息
 	version = flag.Bool("version", false, "show version number")
 	//定义发送sender
-	sender = flag.String("sender", "kafka", "sender which send data to target node")
+	sender = flag.String("sender", "default", "sender which send data to target node")
 	//配置文件路径
 	config = flag.String("config", "conf/config.ini", "path to config.json file")
 	//读取整个日志文件
@@ -29,6 +29,8 @@ var (
 	readAlway = flag.Bool("alway", true, "read logs once and exit")
 	//是否生成性能文件
 	profile = flag.Bool("profile", false, "gen profile or not")
+	//定时检测
+	timercheck = flag.Bool("tc", false, "timer check")
 )
 
 func main() {
@@ -72,7 +74,10 @@ func main() {
 
 	fmt.Printf("Agent started, pid: %d  ppid: %d \n", os.Getpid(), os.Getppid())
 
-	go logsend.TimerCheck()
+	//是否开启定时检测
+	if *timercheck {
+		go logsend.TimerCheck()
+	}
 
 	fi, err := os.Stdin.Stat()
 	if err != nil {
