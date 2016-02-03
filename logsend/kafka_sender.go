@@ -2,6 +2,7 @@ package logsend
 
 import (
 	"github.com/Shopify/sarama"
+	"github.com/juju/errors"
 	"strconv"
 	"strings"
 	"study2016/logshot/logger"
@@ -9,15 +10,11 @@ import (
 )
 
 var (
-	prodChan     = make(chan *LogLine, 0)
 	kBrokers     string
 	kBatch       int
 	kTopic       string
 	kBufferTime  int
 	kBufferBytes int
-	cCapacity    int
-
-	myproducer *KafkaProducer
 )
 
 func init() {
@@ -69,12 +66,16 @@ func (k *KafkaProducer) Close() error {
 
 //output to kafka
 type KafkaSender struct {
-	sendCh chan *LogLine
+	sendCh   chan *LogLine
+	producer *KafkaProducer
 }
 
 //1.初始化配置
 //2.监听消息发送通道
-func InitKafka(conf map[string]string) error {
+func InitKafka(conf map[string]string, sender Sender) error {
+
+	logger.GetLogger().Infoln("init kafka sender")
+
 	//变量初始化
 	if val, ok := conf["kafkaBatch"]; ok {
 		kBatch, _ = strconv.Atoi(val)
@@ -92,8 +93,7 @@ func InitKafka(conf map[string]string) error {
 		kBufferBytes, _ = strconv.Atoi(val)
 	}
 	//创建kafka的生产者
-	var err error
-	myproducer, err = NewKafkaProducer(
+	myproducer, err := NewKafkaProducer(
 		strings.Split(kBrokers, ","),
 		kTopic, kBufferTime,
 		kBufferBytes, kBatch)
@@ -103,27 +103,29 @@ func InitKafka(conf map[string]string) error {
 		return err
 	}
 
-	go func() {
-		//阻塞的方式接收prodChan的消息
-		for data := range prodChan {
-			myproducer.Write(string(data.Line))
-		}
-	}()
+	err = sender.SetConfig(myproducer)
+	if err != nil {
+		return err
+	}
+	sender.Receive()
 	return nil
 }
 
 //工厂类,生成本Sender
 func NewKafkaSender() Sender {
 	sender := &KafkaSender{
-		sendCh: prodChan,
+		sendCh: make(chan *LogLine, 0),
 	}
 	return Sender(sender)
 }
 
-func (self *KafkaSender) Send(ll *LogLine) {
-	prodChan <- ll
-}
-func (self *KafkaSender) SetConfig(iniConfig map[string]string) error {
+func (self *KafkaSender) SetConfig(obj interface{}) error {
+	switch obj := obj.(type) {
+	case *KafkaProducer:
+		self.producer = obj
+	default:
+		return errors.New("kafka setconfig error ")
+	}
 	return nil
 }
 func (self *KafkaSender) Name() string {
@@ -131,5 +133,19 @@ func (self *KafkaSender) Name() string {
 }
 func (self *KafkaSender) Stop() error {
 	logger.GetLogger().Infoln("kafka sender stop")
-	return myproducer.Close()
+	close(self.sendCh)
+	return self.producer.Close()
+}
+
+func (self *KafkaSender) Receive() {
+	go func() {
+		//阻塞的方式接收prodChan的消息
+		for data := range self.sendCh {
+			self.producer.Write(string(data.Line))
+		}
+	}()
+}
+
+func (self *KafkaSender) Send(ll *LogLine) {
+	self.sendCh <- ll
 }

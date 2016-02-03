@@ -20,7 +20,7 @@ var (
 	//输出Agent版本信息
 	version = flag.Bool("version", false, "show version number")
 	//定义发送sender
-	sender = flag.String("sender", "default", "sender which send data to target node")
+	sender = flag.String("sender", "kafka", "sender which send data to target node")
 	//配置文件路径
 	config = flag.String("config", "conf/config.ini", "path to config.json file")
 	//读取整个日志文件
