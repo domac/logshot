@@ -28,7 +28,6 @@ func WatchFiles(configFile string) {
 	//统计分配文件的数量
 	//当每个文件完成任务后,这个数目减少1
 	//主要用于判断doneCh的过程中,不至于因为doneCh的阻塞导致deadlock
-	assignedFilesCount := len(assignedFiles)
 
 	if err != nil {
 		logger.GetLogger().Errorln("can't assign file per rule", err)
@@ -43,14 +42,15 @@ func WatchFiles(configFile string) {
 
 	//如果监听对象为目录,开启异步监听
 	if com.IsDir(rule.watchDir) {
-		go continueWatch(&rule.watchDir, rule, &assignedFilesCount, doneCh)
+		go continueWatch(&rule.watchDir, rule, doneCh)
+	}else {
+		go continueSingleFileWatch(&rule.watchDir, rule, doneCh)
 	}
 
 	for {
 		select {
 		case fpath := <-doneCh:
-			assignedFilesCount = assignedFilesCount - 1
-			if assignedFilesCount == 0 {
+			if len(WatcherMap) == 0 || Conf.ReadAlway == false {
 				logger.GetLogger().Infof("finished reading file %+v", fpath)
 				return
 			}
@@ -114,7 +114,8 @@ func appendWatch(files []*File, file *File) []*File {
 	return files
 }
 
-func continueWatch(dir *string, rule *Rule, totalFileCount *int, doneCh chan string) {
+//针对目录形式的监控
+func continueWatch(dir *string, rule *Rule, doneCh chan string) {
 	//判断dir是否是目录结构
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -126,10 +127,9 @@ func continueWatch(dir *string, rule *Rule, totalFileCount *int, doneCh chan str
 			select {
 			case ev := <-watcher.Event:
 				if ev.IsCreate() {
-					*totalFileCount = *totalFileCount + 1
-					println("发现文件创建:", ev.Name, "当前监控文件数:", *totalFileCount)
 					file, err := assignSingleFile(ev.Name, rule)
 					appendWatch(nil, file)
+					println("create watch file :", ev.Name, " current watch file number is:", len(WatcherMap))
 					if err == nil {
 						file.doneCh = doneCh
 						go file.tail() //异步传输
@@ -162,6 +162,47 @@ func continueWatch(dir *string, rule *Rule, totalFileCount *int, doneCh chan str
 	/* ... do stuff ... */
 	watcher.Close()
 }
+
+
+//针对单文件的监控
+func continueSingleFileWatch(dir *string, rule *Rule, doneCh chan string) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		logger.GetLogger().Errorln(err.Error())
+	}
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case ev := <-watcher.Event:
+				if ev.IsDelete() { //文件被删除的情况,需要进行资源回收
+					//获取被删除的file对象,并发完成消息到其doneCh
+					logger.GetLogger().Infof("single tailing file is deleted : %s ", ev.Name)
+					if delete_file, ok := WatcherMap[ev.Name]; ok {
+						delete(WatcherMap, ev.Name)
+						if len(WatcherMap) == 0 {
+							closeRule(rule)
+						}
+						delete_file.Tail.Stop() // stop the line tail
+					} else {
+						logger.GetLogger().Errorf("get single delete file fail : %s", ev.Name)
+					}
+				}
+			case err := <-watcher.Error:
+				logger.GetLogger().Errorln("error:", err)
+			}
+		}
+	}()
+	//监听目录
+	err = watcher.Watch(*dir)
+	if err != nil {
+		logger.GetLogger().Errorln(err.Error())
+	}
+	<-done
+	/* ... do stuff ... */
+	watcher.Close()
+}
+
 
 //监听文件结构
 type File struct {
