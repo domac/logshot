@@ -51,7 +51,7 @@ func WatchFiles(configFile string) {
 		case fpath := <-doneCh:
 			assignedFilesCount = assignedFilesCount - 1
 			if assignedFilesCount == 0 {
-				logger.GetLogger().Errorln("finished reading file %+v", fpath)
+				logger.GetLogger().Infof("finished reading file %+v", fpath)
 				return
 			}
 		}
@@ -136,10 +136,13 @@ func continueWatch(dir *string, rule *Rule, totalFileCount *int, doneCh chan str
 					}
 				} else if ev.IsDelete() { //文件被删除的情况,需要进行资源回收
 					//获取被删除的file对象,并发完成消息到其doneCh
-					logger.GetLogger().Infof("tailing file is deleted : %s \n ", ev.Name)
+					logger.GetLogger().Infof("tailing file is deleted : %s ", ev.Name)
 					if delete_file, ok := WatcherMap[ev.Name]; ok {
 						delete(WatcherMap, ev.Name)
-						delete_file.Tail.Stop()// stop the line tail
+						if len(WatcherMap) == 0 {
+							closeRule(rule)
+						}
+						delete_file.Tail.Stop() // stop the line tail
 					} else {
 						logger.GetLogger().Errorf("get delete file fail : %s", ev.Name)
 					}
@@ -206,8 +209,6 @@ func (self *File) tail() {
 
 	//功能收尾
 	defer func() {
-		//关闭Sender初始化过程中建立的通讯
-		closeRule(self.rule)
 		//通知结束通道,让主调用方结束
 		logger.GetLogger().Infof("file-watching has done : %s", self.Tail.Filename)
 		self.doneCh <- self.Tail.Filename
@@ -229,5 +230,6 @@ func checkLineRule(line *string, rule *Rule) {
 
 //关闭规则
 func closeRule(rule *Rule) {
+	logger.GetLogger().Infoln("stop rule send channel ")
 	rule.CloseSender()
 }
