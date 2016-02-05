@@ -9,9 +9,8 @@ import (
 //规则引擎
 type Rule struct {
 	regexp   *regexp.Regexp
-	watchDir string   //文件监听目录
-	senders  []Sender //数据发送器
-	mask     string
+	watchDir string //文件监听目录
+	sender   Sender //数据发送器
 }
 
 //创建规则
@@ -33,16 +32,11 @@ func NewRule(sregexp string, watchDir string) (*Rule, error) {
 	return rule, nil
 }
 
-//发送日志行
-func (rule *Rule) SendLogLine(ll *LogLine) {
-	for _, sender := range rule.senders {
-		sender.Send(ll)
-	}
+//关闭Sender
+func (self *Rule) CloseSender() {
+	self.sender.Stop()
 }
 
-//关闭Sender
-func (rule *Rule) CloseSender() {
-	for _, sender := range rule.senders {
-		sender.Stop()
-	}
+func (self *Rule) GetSender() Sender {
+	return self.sender
 }

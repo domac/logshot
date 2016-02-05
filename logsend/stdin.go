@@ -5,6 +5,7 @@ import (
 	"flag"
 	"os"
 	"study2016/logshot/logger"
+	"time"
 )
 
 //处理Pipe的标准输入命令
@@ -24,7 +25,11 @@ func ProcessStdin() error {
 		if err != nil {
 			break
 		}
-		checkLineRule(&line, rule)
+		logline := &LogLine{
+			Ts:   time.Now().UTC().UnixNano(),
+			Line: []byte(line),
+		}
+		rule.GetSender().Send(logline)
 	}
 
 	return nil

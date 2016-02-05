@@ -38,7 +38,7 @@ func LoadRawConfig(f *flag.Flag) {
 //载入自定义配置文件
 func LoadConfigFromFile(fileName string) (rule *Rule, err error) {
 	config := ReadConfig(fileName)
-	senders := make([]Sender, 0)
+	var mysender Sender
 	conifg_sender_name := Conf.SenderName
 	for sender_name, register := range Conf.registeredSenders {
 		//使用指定的sender
@@ -50,7 +50,8 @@ func LoadConfigFromFile(fileName string) (rule *Rule, err error) {
 			if err != nil {
 				panic(err)
 			}
-			senders = append(senders, sender)
+			mysender = sender
+			break
 		}
 	}
 	watch_dir, _ := config["agent"]["watchDir"]
@@ -60,10 +61,10 @@ func LoadConfigFromFile(fileName string) (rule *Rule, err error) {
 		panic(err)
 	}
 	//判断sender是否存在
-	if len(senders) == 0 {
+	if mysender == nil {
 		panic(errors.New("No sender found !"))
 	}
-	rule.senders = senders
+	rule.sender = mysender
 	return
 }
 

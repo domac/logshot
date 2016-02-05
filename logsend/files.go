@@ -34,6 +34,8 @@ func WatchFiles(configFile string) {
 	}
 
 	doneCh := make(chan string)
+
+	//异步日志发送
 	for _, file := range assignedFiles {
 		file.doneCh = doneCh
 		//并行处理文件采集
@@ -43,7 +45,7 @@ func WatchFiles(configFile string) {
 	//如果监听对象为目录,开启异步监听
 	if com.IsDir(rule.watchDir) {
 		go continueWatch(&rule.watchDir, rule, doneCh)
-	}else {
+	} else {
 		go continueSingleFileWatch(&rule.watchDir, rule, doneCh)
 	}
 
@@ -62,11 +64,10 @@ func WatchFiles(configFile string) {
 func assignSingleFile(filepath string, rule *Rule) (*File, error) {
 	is_dir := com.IsDir(filepath)
 	if !is_dir {
-		file, err := NewFile(filepath)
+		file, err := NewFile(filepath, rule.GetSender())
 		if err != nil {
 			return nil, err
 		}
-		file.rule = rule
 		return file, nil
 	}
 	return nil, errors.New("file not found : " + filepath)
@@ -85,11 +86,10 @@ func assignFiles(allFiles []string, rule *Rule) ([]*File, error) {
 					panic(err)
 				}
 				if !info.IsDir() && !strings.Contains(info.Name(), ".DS_Store") {
-					file, err := NewFile(pth)
+					file, err := NewFile(pth, rule.GetSender())
 					if err != nil {
 						return err
 					}
-					file.rule = rule
 					files = appendWatch(files, file)
 				}
 				return nil
@@ -163,7 +163,6 @@ func continueWatch(dir *string, rule *Rule, doneCh chan string) {
 	watcher.Close()
 }
 
-
 //针对单文件的监控
 func continueSingleFileWatch(dir *string, rule *Rule, doneCh chan string) {
 	watcher, err := fsnotify.NewWatcher()
@@ -203,16 +202,15 @@ func continueSingleFileWatch(dir *string, rule *Rule, doneCh chan string) {
 	watcher.Close()
 }
 
-
 //监听文件结构
 type File struct {
 	Tail   *tail.Tail
-	rule   *Rule
+	sender Sender
 	doneCh chan string
 }
 
 //创建监听文件
-func NewFile(fpath string) (*File, error) {
+func NewFile(fpath string, sender Sender) (*File, error) {
 	file := &File{}
 	var err error
 
@@ -242,6 +240,7 @@ func NewFile(fpath string) (*File, error) {
 			Logger:   logger.GetLogger(), //使用自定义的日志器
 		})
 	}
+	file.sender = sender
 	return file, err
 }
 
@@ -255,18 +254,17 @@ func (self *File) tail() {
 		self.doneCh <- self.Tail.Filename
 	}()
 	for line := range self.Tail.Lines {
-		checkLineRule(&line.Text, self.rule)
+		self.sendcall(&line.Text)
 	}
 }
 
-//检查并进行发送
-func checkLineRule(line *string, rule *Rule) {
+func (self *File) sendcall(line *string) {
 	//日志行对象
 	logline := &LogLine{
 		Ts:   time.Now().UTC().UnixNano(),
 		Line: []byte(*line),
 	}
-	rule.SendLogLine(logline)
+	self.sender.Send(logline)
 }
 
 //关闭规则
