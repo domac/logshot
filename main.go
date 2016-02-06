@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+	"study2016/logshot/heartbeat"
 	"study2016/logshot/logger"
 	"study2016/logshot/logsend"
 	"study2016/logshot/utils"
@@ -20,7 +21,7 @@ var (
 	//输出Agent版本信息
 	version = flag.Bool("version", false, "show version number")
 	//定义发送sender
-	sender = flag.String("sender", "kafka", "sender which send data to target node")
+	sender = flag.String("sender", "default", "sender which send data to target node")
 	//配置文件路径
 	config = flag.String("config", "conf/config.ini", "path to config.json file")
 	//读取整个日志文件
@@ -31,6 +32,8 @@ var (
 	profile = flag.Bool("profile", false, "gen profile or not")
 	//定时检测
 	timercheck = flag.Bool("tc", false, "timer check")
+	//心跳监控
+	hb = flag.Bool("hb", false, "heartbeat")
 )
 
 func main() {
@@ -77,6 +80,10 @@ func main() {
 	//是否开启定时检测
 	if *timercheck {
 		go logsend.TimerCheck()
+	}
+
+	if *hb {
+		go heartbeat.RunHeartBeatTask(":9999")
 	}
 
 	fi, err := os.Stdin.Stat()

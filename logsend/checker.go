@@ -26,7 +26,7 @@ func TimerCheck() {
 		select {
 		case <-timer.C:
 			Locker.Lock()
-			fmt.Printf("the number of watching files: %d \n", len(WatcherMap))
+			fmt.Printf("the number of watching files: %d ", len(WatcherMap))
 			Locker.Unlock()
 		}
 	}
