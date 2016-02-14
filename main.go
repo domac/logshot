@@ -83,7 +83,8 @@ func main() {
 	}
 
 	if *hb {
-		go heartbeat.RunHeartBeatTask(":9999")
+		ini_config := logsend.ReadConfig(*config)
+		go heartbeat.RunHeartBeatTask(ini_config["agent"]["heartbeat.port"])
 	}
 
 	fi, err := os.Stdin.Stat()
