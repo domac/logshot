@@ -2,6 +2,8 @@ package logsend
 
 import (
 	"fmt"
+	"runtime"
+	"strconv"
 	"study2016/logshot/logger"
 )
 
@@ -30,8 +32,8 @@ func NewDefaultSender() Sender {
 }
 
 //处理日志数据
-func handleData(data *LogLine) {
-	fmt.Println("[", data.Ts, "]", "standard output : ", string(data.Line))
+func handleData(w *Worker, data *LogLine) {
+	fmt.Println("[", w.Name, "/", data.Ts, "]", "standard output : ", string(data.Line))
 }
 
 //注入配置
@@ -54,10 +56,29 @@ func (self *DefaultSender) Send(ll *LogLine) {
 	self.sendCh <- ll
 }
 
+type Worker struct {
+	Id   int
+	Name string
+}
+
+var WORKER_NUM = runtime.NumCPU()
+
+func NewWorker(id int, name string) *Worker {
+	return &Worker{
+		Id:   id,
+		Name: name,
+	}
+}
+
 func (self *DefaultSender) Receive() {
-	go func() {
-		for data := range self.sendCh {
-			handleData(data)
-		}
-	}()
+	for i := 0; i < WORKER_NUM; i++ {
+		w := NewWorker(i, "worker_"+strconv.Itoa(i))
+		go consume_data(w, self.sendCh)
+	}
+}
+
+func consume_data(w *Worker, jobs <-chan *LogLine) {
+	for data := range jobs {
+		handleData(w, data)
+	}
 }
