@@ -26,7 +26,7 @@ func InitDefault(conf map[string]string, sender Sender) error {
 //工厂类,生成本Sender
 func NewDefaultSender() Sender {
 	sender := &DefaultSender{
-		sendCh: make(chan *LogLine, 0),
+		sendCh: make(chan *LogLine, 100),
 	}
 	return Sender(sender)
 }
@@ -56,12 +56,14 @@ func (self *DefaultSender) Send(ll *LogLine) {
 	self.sendCh <- ll
 }
 
+//数据处理worker
 type Worker struct {
 	Id   int
 	Name string
 }
 
-var WORKER_NUM = runtime.NumCPU()
+//worker的数控为最大CPU核数
+var WORKER_NUM = runtime.GOMAXPROCS(runtime.NumCPU())
 
 func NewWorker(id int, name string) *Worker {
 	return &Worker{
@@ -70,13 +72,16 @@ func NewWorker(id int, name string) *Worker {
 	}
 }
 
+//数据接收
 func (self *DefaultSender) Receive() {
+	logger.GetLogger().Infoln("worker数量:", WORKER_NUM)
 	for i := 0; i < WORKER_NUM; i++ {
 		w := NewWorker(i, "worker_"+strconv.Itoa(i))
 		go consume_data(w, self.sendCh)
 	}
 }
 
+//worker消费数据
 func consume_data(w *Worker, jobs <-chan *LogLine) {
 	for data := range jobs {
 		handleData(w, data)
