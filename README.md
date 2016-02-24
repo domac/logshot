@@ -1,16 +1,3 @@
 ## 基于go的日志采集工具 (v0.2.9)
 
-### change log:
-v0.1 : 支持基本的日志文件监控输出
-
-v0.2 : 增加对日志文件的自定义全量/增量采集
-
-v0.2.5 : 增加管道命令的支持
-
-v0.2.6 : 增加对linux 2.6.32 以下的 file watch 支持 (Poll 方式)
-
-v0.2.7 : 日志模块更改为seelog
-
-v0.2.8 : 增加监控过程中日志删除的处理
-
-v0.2.9 : 增加心跳检测功能
+a log collector which in support of sending data to kafka
